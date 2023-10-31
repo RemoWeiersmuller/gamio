@@ -19,25 +19,20 @@ def main():
     choice = input("(P)lay, (S)et limit, (H)igh scores, (Q)uit: ").upper()
     while choice != "Q":
         if choice == "P":
-            play(low, high)
+            play_guessing_game(low, high)
             number_of_games += 1
         elif choice == "S":
             high = set_limit(low)
         elif choice == "H":
-            high_scores()
+            scores = load_high_scores()
+            display_high_scores(scores)
         else:
             print("Invalid choice")
         choice = input("(P)lay, (S)et limit, (H)igh scores, (Q)uit: ").upper()
     print(f"Thanks for playing ({number_of_games} times)!")
 
 
-def scoresave(number_of_guesses, low, high):
-    """Save score to scores.txt with range"""
-    with open("scores.txt", "a") as outfile:
-        print(f"{number_of_guesses}|{high - low + 1}", file=outfile)
-
-
-def play(low, high):
+def play_guessing_game(low, high):
     """Play guessing game using current low and high values."""
     secret = random.randint(low, high)
     number_of_guesses = 1
@@ -50,16 +45,25 @@ def play(low, high):
             print("Lower")
         guess = int(input(f"Guess a number between {low} and {high}: "))
     print(f"You got it in {number_of_guesses} guesses.")
-    if good_score(number_of_guesses, high - low + 1) == True:
+    if is_good_score(number_of_guesses, high - low + 1):
         print("Good guessing!")
-    else:
-        pass
     choice = input("Do you want to save your score? (y/N) ")
     if choice.upper() == "Y":
-        scoresave(number_of_guesses, low, high)
-        return
+        save_score(number_of_guesses, low, high)
     else:
         print("Fine then.")
+
+
+def is_good_score(number_of_guesses, range_):
+    """Determine if score is good or not."""
+    return number_of_guesses <= math.ceil(math.log2(range_))
+
+
+def save_score(number_of_guesses, low, high):
+    """Save score to scores.txt with range"""
+    with open("scores.txt", "a", encoding="utf-8-sig") as outfile:
+        print(f"{number_of_guesses}|{high - low + 1}", file=outfile)
+
 
 def set_limit(low):
     """Set high limit to new value from user input."""
@@ -72,29 +76,33 @@ def set_limit(low):
 
 
 def get_valid_number(prompt):
+    """Get a valid input from the user."""
     is_valid = False
-    while is_valid == False:
+    while not is_valid:
         try:
             number = int(input(prompt))
             is_valid = True
         except ValueError:
             print("Invalid number")
     return number
-def good_score(number_of_guesses, range_):
-    if number_of_guesses <= math.ceil(math.log2(range_)):
-        return True
 
 
-
-def high_scores():
+def load_high_scores():
+    """Read file and return high scores as a list of lists."""
     scores = []
-    with open("scores.txt") as in_file:
+    with open("scores.txt", encoding="utf-8-sig") as in_file:
         for line in in_file:
             line = line.split("|")
             scores.append((int(line[0]), int(line[1])))
     scores.sort()
+    return scores
+
+
+def display_high_scores(scores):
+    """Display the high scores."""
     for score in scores:
-        marker = "!" if good_score(score[0], score[1]) else ""
+        marker = "!" if is_good_score(score[0], score[1]) else ""
         print(f"{score[0]} ({score[1]}) {marker}")
+
 
 main()
